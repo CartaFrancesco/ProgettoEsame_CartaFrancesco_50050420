@@ -24,6 +24,7 @@ import java.io.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Scanner;
 
 class GestioneParcheggio{
@@ -57,7 +58,7 @@ class GestioneParcheggio{
             return "COD: " +COD+ " PTOT: " +ptot+ " PDIS: " +pdis;
         }
     }
-    public static class Scontrino {
+    public static class Scontrino implements Comparable<Scontrino>{
         int dest;
         int num;
         LocalDate date;
@@ -94,7 +95,12 @@ class GestioneParcheggio{
 
         @Override
         public String toString() {
-            return "NUM: " +num+ " DATA: " +date+ " DALLE: " +OraA+ " ALLE: " +OraU;
+            return "NUM: " +num+ " DATA: " +date+ " DALLE: " +OraA+ " ALLE: " +OraU+ " COSTO: " +prezzo+ " EURO";
+        }
+
+        @Override
+        public int compareTo(Scontrino s) {
+            return Integer.compare(prezzo, s.prezzo);
         }
     }
     public void AddPiano(Piano p) {
@@ -184,7 +190,7 @@ public class Main {
         int index;
 
         do{
-            System.out.println("DIGITARE UN NUMERO DAL MENU' PER SCEGLIERE UN OPZIONE [0 - 10]");
+            System.out.println("DIGITARE UN NUMERO DAL MENU' PER SCEGLIERE UN OPZIONE [0 - 11]");
             System.out.println("0. CREA PIANO");
             System.out.println("1. RIMUOVI PIANO");
             System.out.println("2. STAMPA PIANI");
@@ -196,9 +202,10 @@ public class Main {
             System.out.println("8. STAMPA GUADAGNI TOTALI");
             System.out.println("9. STAMPA GUADAGNI DI UN GIORNO");
             System.out.println("10. STAMPA TUTTI I TICKET");
+            System.out.println("11. STAMPA LA CLASSIFICA DEGLI SCONTRINI PIU' COSTOSI");
             index = sc.nextInt();
-            if(index > 10 || index < 0) System.out.println("SELEZIONE NON VALIDA, RIPROVARE");
-        } while(index > 10 || index < 0);
+            if(index > 11 || index < 0) System.out.println("SELEZIONE NON VALIDA, RIPROVARE");
+        } while(index > 11 || index < 0);
         return index;
     }
     public static void Case0(ArrayList<GestioneParcheggio.Piano> piani, GestioneParcheggio gestione, ArrayList<GestioneParcheggio.Scontrino> scontrini){
@@ -326,6 +333,26 @@ public class Main {
             System.out.println(s);
         }
     }
+    public static void Case11(ArrayList<GestioneParcheggio.Scontrino> storico){
+        Scanner sc = new Scanner(System.in);
+        int n;
+        if(!(storico.isEmpty())){
+            do{
+                System.out.print("QUANTI SCONTRINI SI VUOLE STAMPARE? ");
+                n = sc.nextInt();
+                if(n > storico.size()){
+                    System.out.println("NON SONO DISPONIBILI COSI' TANTI SCONTRINI, RIPROVARE...");
+                }
+            }while (n > storico.size());
+            Collections.sort(storico);
+            Collections.reverse(storico);
+            for(int i = 0; i < n; i++){
+                System.out.print((i+1)+ ". " +storico.get(i));
+                System.out.println(" ");
+            }
+        }
+
+    }
     public static boolean ControlloP(ArrayList<GestioneParcheggio.Piano> piani){
         if(piani.isEmpty()){
             System.out.println("OCCORRE PRIMA INIZIALIZZARE I PIANI:");
@@ -345,15 +372,17 @@ public class Main {
         }
         else return true;
     }
-    public static void ControlloST(GestioneParcheggio gestione, ArrayList<GestioneParcheggio.Scontrino> scontrini, ArrayList<GestioneParcheggio.Scontrino> storico){
+    public static boolean ControlloST(GestioneParcheggio gestione, ArrayList<GestioneParcheggio.Scontrino> scontrini, ArrayList<GestioneParcheggio.Scontrino> storico){
         Scanner sc = new Scanner(System.in);
 
-        if(storico.size() == 0){
+        if(scontrini.isEmpty()){
             System.out.println("NESSUNO SCONTRINO RILEVATO");
             System.out.println("AGGIUNGERE UNO SCONTRINO? [SI/NO] ");
             String s = sc.next();
             if(s.equals("si")) Case3(gestione, scontrini, storico);
+            return false;
         }
+        else return true;
     }
     public static void Read(File fn, GestioneParcheggio gestione, ArrayList<GestioneParcheggio.Piano> piani, ArrayList<GestioneParcheggio.Scontrino> scontrini, ArrayList<GestioneParcheggio.Scontrino> storico) throws IOException {
         FileReader fr = new FileReader(fn);
@@ -458,7 +487,7 @@ public class Main {
     public static String SwitchCase(int index, GestioneParcheggio gestione, ArrayList<GestioneParcheggio.Piano> piani, ArrayList<GestioneParcheggio.Scontrino> scontrini, ArrayList<GestioneParcheggio.Scontrino> storico){
         Scanner sc = new Scanner(System.in);
 
-        String strg = null;
+        String strg;
         boolean c;
 
         switch (index) {
@@ -489,12 +518,12 @@ public class Main {
             }
             //STAMPA TUTTI I DATI DEGLI SCONTRINI
             case 5 -> {
-                c = ControlloS(gestione,scontrini,storico);
+                ControlloS(gestione,scontrini,storico);
                 gestione.StampaScontrini();
             }
             //STAMPA IL PREZZO DI UNO SCONTRINO A SCELTA
             case 6 -> {
-                c = ControlloS(gestione,scontrini,storico);
+                ControlloS(gestione,scontrini,storico);
                 gestione.StampaPrezzo();
             }
             //STAMPA TUTTI I POSTI DISPONIBILI DEI PIANI, IN LISTA, SEGUITI DAL NUMERO DI POSTI TOTALI
@@ -517,6 +546,11 @@ public class Main {
             case 10 -> {
                 ControlloST(gestione,scontrini,storico);
                 Case10(storico);
+            }
+            //STAMPA LA CLASSIFICA DEGLI N SCONTRINI PIU' COSTOSI
+            case 11 -> {
+                c = ControlloST(gestione,scontrini,storico);
+                if (c) Case11(storico);
             }
         }
         System.out.println("IMMETTERE UN'ALTRA OPZIONE? [SI/NO]: ");
