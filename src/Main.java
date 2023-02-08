@@ -80,15 +80,7 @@ class GestioneParcheggio{
         }
 
         public int AssegnaPiano() {
-            int codmax = 0;
-            int pmax = 0;
-            for (Piano p : piano) {
-                if (p.pdis > pmax || pmax == 0) {
-                    codmax = p.COD;
-                    pmax = p.pdis;
-                }
-            }
-            return codmax;
+            return piano.stream().max(Piano::compareTo).map(p -> p.COD).orElse(0);
         }
         public int CalcoloPrezzo(LocalTime in, LocalTime out){
             int prezzo;
@@ -115,7 +107,7 @@ class GestioneParcheggio{
         for(Piano p : piano) {
             if (s.dest == p.COD) {
                 p.scontrini.add(s);
-                p.pdis -= 1;
+                p.pdis--;
             }
         }
     }
