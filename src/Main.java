@@ -34,7 +34,7 @@ class GestioneParcheggio{
     }
 
 
-    public static class Piano{
+    public static class Piano implements Comparable<Piano>{
         int COD;
         ArrayList<Scontrino> scontrini;
         int ptot;
@@ -56,6 +56,11 @@ class GestioneParcheggio{
         @Override
         public String toString() {
             return "COD: " +COD+ " PTOT: " +ptot+ " PDIS: " +pdis;
+        }
+
+        @Override
+        public int compareTo(Piano p) {
+            return Integer.compare(pdis, p.pdis);
         }
     }
     public static class Scontrino implements Comparable<Scontrino>{
@@ -190,7 +195,7 @@ public class Main {
         int index;
 
         do{
-            System.out.println("DIGITARE UN NUMERO DAL MENU' PER SCEGLIERE UN OPZIONE [0 - 11]");
+            System.out.println("DIGITARE UN NUMERO DAL MENU' PER SCEGLIERE UN OPZIONE [0 - 12]");
             System.out.println("0. CREA PIANO");
             System.out.println("1. RIMUOVI PIANO");
             System.out.println("2. STAMPA PIANI");
@@ -203,9 +208,10 @@ public class Main {
             System.out.println("9. STAMPA GUADAGNI DI UN GIORNO");
             System.out.println("10. STAMPA TUTTI I TICKET");
             System.out.println("11. STAMPA LA CLASSIFICA DEGLI SCONTRINI PIU' COSTOSI");
+            System.out.println("12. STAMPA IL PIANO CON PIU' POSTI LIBERI");
             index = sc.nextInt();
-            if(index > 11 || index < 0) System.out.println("SELEZIONE NON VALIDA, RIPROVARE");
-        } while(index > 11 || index < 0);
+            if(index > 12 || index < 0) System.out.println("SELEZIONE NON VALIDA, RIPROVARE");
+        } while(index > 12 || index < 0);
         return index;
     }
     public static void Case0(ArrayList<GestioneParcheggio.Piano> piani, GestioneParcheggio gestione, ArrayList<GestioneParcheggio.Scontrino> scontrini){
@@ -268,6 +274,15 @@ public class Main {
     public static void Case3(GestioneParcheggio gestione, ArrayList<GestioneParcheggio.Scontrino> scontrini, ArrayList<GestioneParcheggio.Scontrino> storico){
         Scanner sc = new Scanner(System.in);
         boolean b;
+        int n = 1;
+        String strg;
+
+        System.out.print("SI VUOLE RESTARE PER PIU' DI UN GIORNO? [SI/NO]: ");
+        strg = sc.next();
+        if(strg.equals("si")) {
+            System.out.print("PER QUANTI GIORNI SI VUOLE RESTARE? ");
+            n = sc.nextInt();
+        }
 
         System.out.print("INSERISCI NUMERO SCONTRINO: ");
         int num = sc.nextInt();
@@ -276,6 +291,7 @@ public class Main {
         GestioneParcheggio.Scontrino s;
         do{
             s = new GestioneParcheggio.Scontrino(num,LocalDate.now(),OraA,OraU);
+            s.prezzo = s.prezzo*n;
             b = UnivocoS(s,scontrini,storico);
             if(b){
                 scontrini.add(s);
@@ -336,7 +352,6 @@ public class Main {
     public static void Case11(ArrayList<GestioneParcheggio.Scontrino> storico){
         Scanner sc = new Scanner(System.in);
         int n;
-        if(!(storico.isEmpty())){
             do{
                 System.out.print("QUANTI SCONTRINI SI VUOLE STAMPARE? ");
                 n = sc.nextInt();
@@ -350,8 +365,20 @@ public class Main {
                 System.out.print((i+1)+ ". " +storico.get(i));
                 System.out.println(" ");
             }
-        }
 
+    }
+    public static void Case12(ArrayList<GestioneParcheggio.Piano> piani){
+        int n = 0;
+        Collections.sort(piani);
+        Collections.reverse(piani);
+        for (GestioneParcheggio.Piano p : piani) {
+            if (piani.get(0).pdis == p.pdis) n++;
+        }
+        if(n > 1){
+            System.out.println("I PIANI CON PIU' POSTI DISPONIBILI SONO:");
+            for(int i = 0; i < n; i++) System.out.println(piani.get(i));
+        }
+        else System.out.println("IL PIANO CON PIU' POSTI DISPONIBILI E': " +piani.get(0));
     }
     public static boolean ControlloP(ArrayList<GestioneParcheggio.Piano> piani){
         if(piani.isEmpty()){
@@ -552,6 +579,11 @@ public class Main {
                 c = ControlloST(gestione,scontrini,storico);
                 if (c) Case11(storico);
             }
+            case 12 -> {
+                c = ControlloP(piani);
+                if(!c) Inizializzazione(piani,gestione);
+                else Case12(piani);
+            }
         }
         System.out.println("IMMETTERE UN'ALTRA OPZIONE? [SI/NO]: ");
         strg = sc.next();
@@ -573,34 +605,25 @@ public class Main {
         String path = "GP.txt";
         try {
             File fn = new File(path);
-
             if(fn.exists()){
-
                 //LETTURA DA FILE
                 Read(fn,gestione,piani,scontrini,storico);
-
                 do{
                     index = Menu();
                     strg = SwitchCase(index,gestione,piani,scontrini,storico);
                 } while(strg.equals("si"));
-
                 //AGGIORNAMENTO FILE
                 Update(fn,piani,scontrini,storico);
-
             } else if (fn.createNewFile()) {
                 //INIZIALIZZAZIONE PIANI
                 Inizializzazione(piani,gestione);
-
                 do {
                     index = Menu();
                     strg = SwitchCase(index,gestione,piani,scontrini,storico);
                 } while(strg.equals("si"));
-
                 //SCRITTURA SU FILE
                 Write(fn,piani,scontrini,storico);
-
             } else System.out.println("IL FILE NON PUO' ESSERE CREATO");
-
         } catch (IOException e) {
             e.printStackTrace();
         }
