@@ -82,17 +82,17 @@ class GestioneParcheggio{
         public int AssegnaPiano() {
             return piano.stream().max(Piano::compareTo).map(p -> p.COD).orElse(0);
         }
-        public int CalcoloPrezzo(LocalTime in, LocalTime out){
+        public int CalcoloPrezzo(LocalTime OraA, LocalTime OraU){
             int prezzo;
-            if(in.getHour() > out.getHour()) prezzo = out.getHour() + 24-in.getHour();
-            else prezzo = out.getHour() - in.getHour();
-            if(out.getMinute() > in.getMinute()) prezzo += 1;
+            if(OraA.getHour() > OraU.getHour()) prezzo = OraU.getHour() + 24-OraA.getHour();
+            else prezzo = OraU.getHour() - OraA.getHour();
+            if(OraU.getMinute() > OraA.getMinute()) prezzo += 1;
             return prezzo;
         }
 
         @Override
         public String toString() {
-            return "NUM: " +num+ " DATA: " +date+ " DALLE: " +OraA+ " ALLE: " +OraU+ " COSTO: " +prezzo+ " EURO";
+            return "NUM: " +num+ " DATA: " +date+ " DALLE: " +OraA+ " ALLE: " +OraU+ " COSTO: " +prezzo+ " EURO ";
         }
 
         @Override
@@ -113,14 +113,10 @@ class GestioneParcheggio{
     }
     public void RimuoviScontrino(Scontrino sctr){
         for(Piano p : piano){
-            if(!(p.scontrini.isEmpty())){
-                for(int i = 0; i < p.scontrini.size(); i++){
-                    if(p.scontrini.get(i).equals(sctr)){
-                        p.scontrini.remove(sctr);
-                        p.pdis +=1;
-                        System.out.println("SCONTRINO RIMOSSO CORRETTAMENTE");
-                    }
-                }
+            boolean b = p.scontrini.removeIf(s -> s.equals(sctr));
+            if(b) {
+                p.pdis++;
+                System.out.println("SCONTRINO RIMOSSO CORRETTAMENTE");
             }
         }
     }
@@ -128,9 +124,7 @@ class GestioneParcheggio{
         piano.remove(p);
     }
     public void StampaPiani(){
-        for (Piano p : piano) {
-            System.out.println(p);
-        }
+        piano.iterator().forEachRemaining(System.out::println);
     }
     public void GetPosti() {
         int tot = 0;
@@ -138,17 +132,12 @@ class GestioneParcheggio{
         for (Piano p : piano) {
             System.out.println("IL PIANO N*: " +i+ " HA " +p.pdis+ " POSTI DISPONIBILI");
             tot += p.pdis;
-            i += 1;
+            i++;
         }
         System.out.println("PER UN TOTALE DI: " +tot);
     }
     public void StampaScontrini(){
-        for (Piano p : piano) {
-            if (!(p.scontrini.isEmpty())) {
-                for (Scontrino s : p.scontrini)
-                    System.out.println(s);
-            }
-        }
+        for (Piano p : piano) p.scontrini.iterator().forEachRemaining(System.out::println);
     }
     public void StampaPrezzo(){
         Scanner sc = new Scanner(System.in);
@@ -178,9 +167,7 @@ public class Main {
             GestioneParcheggio.Piano p = new GestioneParcheggio.Piano(cod,ptot);
             piani.add(p);
         }
-        for(GestioneParcheggio.Piano p : piani){
-            gestione.AddPiano(p);
-        }
+        piani.iterator().forEachRemaining(gestione::AddPiano);
     }
     public static int Menu(){
         Scanner sc = new Scanner(System.in);
@@ -226,13 +213,14 @@ public class Main {
             }
         }while(!b);
         System.out.println("PIANO AGGIUNTO");
-        if((scontrini.size())>0){
-            for(GestioneParcheggio.Scontrino s : scontrini){
-                if(s.dest == p.COD) {
-                    p.scontrini.add(s);
-                    p.pdis -= 1;
+        if(!(scontrini.isEmpty())){
+            GestioneParcheggio.Piano finalP = p;
+            scontrini.iterator().forEachRemaining(s -> {
+                if(s.dest == finalP.COD) {
+                    finalP.scontrini.add(s);
+                    finalP.pdis -= 1;
                 }
-            }
+            });
         }
     }
     public static boolean UnivocoP(GestioneParcheggio.Piano piano, ArrayList<GestioneParcheggio.Piano> piani){
@@ -255,26 +243,17 @@ public class Main {
         System.out.println("CHE PIANO VUOI RIMUOVERE? ");
         int num = sc.nextInt();
 
-        for(GestioneParcheggio.Piano p : piani){
+        piani.iterator().forEachRemaining(p -> {
             if(p.COD == num){
                 gestione.RimuoviPiano(p);
                 System.out.println("PIANO RIMOSSO CORRETTAMENTE");
             }
-        }
+        });
         piani.removeIf(p -> p.COD == num);
     }
     public static void Case3(GestioneParcheggio gestione, ArrayList<GestioneParcheggio.Scontrino> scontrini, ArrayList<GestioneParcheggio.Scontrino> storico){
         Scanner sc = new Scanner(System.in);
         boolean b;
-        int n = 1;
-        String strg;
-
-        System.out.print("SI VUOLE RESTARE PER PIU' DI UN GIORNO? [SI/NO]: ");
-        strg = sc.next();
-        if(strg.equals("si")) {
-            System.out.print("PER QUANTI GIORNI SI VUOLE RESTARE? ");
-            n = sc.nextInt();
-        }
 
         System.out.print("INSERISCI NUMERO SCONTRINO: ");
         int num = sc.nextInt();
@@ -283,7 +262,6 @@ public class Main {
         GestioneParcheggio.Scontrino s;
         do{
             s = new GestioneParcheggio.Scontrino(num,LocalDate.now(),OraA,OraU);
-            s.prezzo = s.prezzo*n;
             b = UnivocoS(s,scontrini,storico);
             if(b){
                 scontrini.add(s);
@@ -315,15 +293,13 @@ public class Main {
         return LocalTime.of(h,m);
     }
     public static void Case8(ArrayList<GestioneParcheggio.Scontrino> storico){
-        int gtot = 0;
-        for(GestioneParcheggio.Scontrino s : storico){
-            gtot += s.prezzo;
-        }
-        System.out.println("IN TOTALE, DALLA SUA APERTURA, LA STRUTTURA HA GUADAGNATO: " +gtot+ " EURO");
+        int[] gtot = new int[1];
+        storico.stream().forEach(s -> gtot[0] += s.prezzo);
+        System.out.println("IN TOTALE, DALLA SUA APERTURA, LA STRUTTURA HA GUADAGNATO: " +gtot[0]+ " EURO");
     }
     public static void Case9(ArrayList<GestioneParcheggio.Scontrino> storico){
         Scanner sc = new Scanner(System.in);
-        int ggiorno = 0;
+        int[] ggiorno = new int[1];
         System.out.print("GIORNO: ");
         int d = sc.nextInt();
         System.out.print("MESE: ");
@@ -331,15 +307,13 @@ public class Main {
         System.out.print("ANNO: ");
         int y = sc.nextInt();
         LocalDate date = LocalDate.of(y,m,d);
-        for(GestioneParcheggio.Scontrino s : storico){
-            if(s.date.equals(date)) ggiorno += s.prezzo;
-        }
-        System.out.println("NEL GIORNO: " +date+ " LA STRUTTURA HA GUADAGNATO: " +ggiorno+ " EURO");
+        storico.iterator().forEachRemaining(s -> {
+            if(s.date.equals(date)) ggiorno[0] += s.prezzo;
+        });
+        System.out.println("NEL GIORNO: " +date+ " LA STRUTTURA HA GUADAGNATO: " +ggiorno[0]+ " EURO");
     }
     public static void Case10(ArrayList<GestioneParcheggio.Scontrino> storico){
-        for(GestioneParcheggio.Scontrino s : storico){
-            System.out.println(s);
-        }
+        storico.iterator().forEachRemaining(System.out::println);
     }
     public static void Case11(ArrayList<GestioneParcheggio.Scontrino> storico){
         Scanner sc = new Scanner(System.in);
@@ -357,7 +331,6 @@ public class Main {
                 System.out.print((i+1)+ ". " +storico.get(i));
                 System.out.println(" ");
             }
-
     }
     public static void Case12(ArrayList<GestioneParcheggio.Piano> piani){
         int n = 0;
