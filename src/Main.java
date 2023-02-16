@@ -28,17 +28,17 @@ import java.util.Collections;
 import java.util.Scanner;
 
 class GestioneParcheggio{
-    static ArrayList<Piano> piano;
+    private static ArrayList<Piano> piano;
     public GestioneParcheggio() {
         piano = new ArrayList<>();
     }
 
 
     public static class Piano implements Comparable<Piano>{
-        int COD;
-        ArrayList<Scontrino> scontrini;
-        int ptot;
-        int pdis;
+        protected int COD;
+        protected ArrayList<Scontrino> scontrini;
+        protected int ptot;
+        protected int pdis;
         public Piano(int COD, int ptot) {
             this.COD = COD;
             scontrini = new ArrayList<>();
@@ -64,12 +64,12 @@ class GestioneParcheggio{
         }
     }
     public static class Scontrino implements Comparable<Scontrino>{
-        int dest;
-        int num;
-        LocalDate date;
-        LocalTime OraA;
-        LocalTime OraU;
-        int prezzo;
+        protected int dest;
+        protected int num;
+        protected LocalDate date;
+        protected LocalTime OraA;
+        protected LocalTime OraU;
+        protected int prezzo;
         public Scontrino(int num,LocalDate date, LocalTime oraA, LocalTime oraU) {
             dest = AssegnaPiano();
             this.num = num;
@@ -80,7 +80,9 @@ class GestioneParcheggio{
         }
 
         public int AssegnaPiano() {
-            return piano.stream().max(Piano::compareTo).map(p -> p.COD).orElse(0);
+            piano.sort(Piano::compareTo);
+            Collections.reverse(piano);
+            return piano.get(0).COD;
         }
         public int CalcoloPrezzo(LocalTime OraA, LocalTime OraU){
             int prezzo;
@@ -104,21 +106,21 @@ class GestioneParcheggio{
         piano.add(p);
     }
     public void AddScontrino(Scontrino s){
-        for(Piano p : piano) {
+        piano.iterator().forEachRemaining(p -> {
             if (s.dest == p.COD) {
-                p.scontrini.add(s);
-                p.pdis--;
+            p.scontrini.add(s);
+            p.pdis--;
             }
-        }
+        });
     }
     public void RimuoviScontrino(Scontrino sctr){
-        for(Piano p : piano){
+        piano.iterator().forEachRemaining(p -> {
             boolean b = p.scontrini.removeIf(s -> s.equals(sctr));
             if(b) {
                 p.pdis++;
                 System.out.println("SCONTRINO RIMOSSO CORRETTAMENTE");
             }
-        }
+        });
     }
     public void RimuoviPiano(Piano p) {
         piano.remove(p);
@@ -127,29 +129,30 @@ class GestioneParcheggio{
         piano.iterator().forEachRemaining(System.out::println);
     }
     public void GetPosti() {
-        int tot = 0;
-        int i = 1;
-        for (Piano p : piano) {
-            System.out.println("IL PIANO N*: " +i+ " HA " +p.pdis+ " POSTI DISPONIBILI");
-            tot += p.pdis;
-            i++;
-        }
-        System.out.println("PER UN TOTALE DI: " +tot);
+        int[] tot = new int[1];
+        int[] i = new int[1];
+        i[0] = 1;
+        piano.iterator().forEachRemaining(p -> {
+            System.out.println("IL PIANO N*: " +i[0]+ " HA " +p.pdis+ " POSTI DISPONIBILI");
+            tot[0] += p.pdis;
+            i[0]++;
+        });
+        System.out.println("PER UN TOTALE DI: " +tot[0]);
     }
     public void StampaScontrini(){
-        for (Piano p : piano) p.scontrini.iterator().forEachRemaining(System.out::println);
+        piano.iterator().forEachRemaining(p -> p.scontrini.iterator().forEachRemaining(System.out::println));
     }
     public void StampaPrezzo(){
         Scanner sc = new Scanner(System.in);
         System.out.print("DIGITA IL NUMERO DI SCONTRINO: ");
         int num = sc.nextInt();
-        for(Piano p : piano){
+        piano.iterator().forEachRemaining(p -> {
             if(!(p.scontrini.isEmpty())){
-                for(Scontrino s : p.scontrini){
+                p.scontrini.iterator().forEachRemaining(s -> {
                     if(s.num == num) System.out.println("LO SCONTRINO NUM*: " +s.num+ " DALLE " +s.OraA+ " ALLE " +s.OraU+ " HA PREZZO: " +s.prezzo+ " EURO");
-                }
+                });
             }
-        }
+        });
     }
 }
 
@@ -278,14 +281,13 @@ public class Main {
         Scanner sc = new Scanner(System.in);
         System.out.println("DIGITARE NUMERO DI SCONTRINO DA RIMUOVERE: ");
         int num = sc.nextInt();
-        for(GestioneParcheggio.Scontrino s : scontrini){
+        scontrini.iterator().forEachRemaining(s -> {
             if(s.num == num) gestione.RimuoviScontrino(s);
-        }
+        });
         scontrini.removeIf(s -> s.num == num);
     }
     public static LocalTime getOrario(String s){
         Scanner sc = new Scanner(System.in);
-
         System.out.print("INSERISCI ORA ["+s+"]: ");
         int h = sc.nextInt();
         System.out.print("INSERISCI MINUTI ["+s+"]: ");
@@ -294,7 +296,7 @@ public class Main {
     }
     public static void Case8(ArrayList<GestioneParcheggio.Scontrino> storico){
         int[] gtot = new int[1];
-        storico.stream().forEach(s -> gtot[0] += s.prezzo);
+        storico.iterator().forEachRemaining(s -> gtot[0] += s.prezzo);
         System.out.println("IN TOTALE, DALLA SUA APERTURA, LA STRUTTURA HA GUADAGNATO: " +gtot[0]+ " EURO");
     }
     public static void Case9(ArrayList<GestioneParcheggio.Scontrino> storico){
@@ -328,20 +330,19 @@ public class Main {
             Collections.sort(storico);
             Collections.reverse(storico);
             for(int i = 0; i < n; i++){
-                System.out.print((i+1)+ ". " +storico.get(i));
-                System.out.println(" ");
+                System.out.println((i+1)+ ". " +storico.get(i));
             }
     }
     public static void Case12(ArrayList<GestioneParcheggio.Piano> piani){
-        int n = 0;
+        int[] n = new int[1];
         Collections.sort(piani);
         Collections.reverse(piani);
-        for (GestioneParcheggio.Piano p : piani) {
-            if (piani.get(0).pdis == p.pdis) n++;
-        }
-        if(n > 1){
-            System.out.println("I PIANI CON PIU' POSTI DISPONIBILI SONO:");
-            for(int i = 0; i < n; i++) System.out.println(piani.get(i));
+        piani.iterator().forEachRemaining(p -> {
+            if (piani.get(0).pdis == p.pdis) n[0]++;
+        });
+        if(n[0] > 1){
+            System.out.println("I " +n[0]+ " PIANI CON PIU' POSTI DISPONIBILI SONO:");
+            for(int i = 0; i < n[0]; i++) System.out.println(piani.get(i));
         }
         else System.out.println("IL PIANO CON PIU' POSTI DISPONIBILI E': " +piani.get(0));
     }
