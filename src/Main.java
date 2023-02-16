@@ -132,9 +132,8 @@ class GestioneParcheggio{
         Scanner sc = new Scanner(System.in);
         System.out.print("DIGITA IL NUMERO DI SCONTRINO: ");
         int num = sc.nextInt();
-        piano.iterator().forEachRemaining(p -> { p.scontrini.iterator().forEachRemaining(s -> {
-                if(s.num == num) System.out.println("LO SCONTRINO NUM*: " +s.num+ " DALLE " +s.OraA+ " ALLE " +s.OraU+ " HA PREZZO: " +s.prezzo+ " EURO"); });
-        });
+        piano.iterator().forEachRemaining(p -> p.scontrini.iterator().forEachRemaining(s -> {
+                if(s.num == num) System.out.println("LO SCONTRINO NUM*: " +s.num+ " DALLE " +s.OraA+ " ALLE " +s.OraU+ " HA PREZZO: " +s.prezzo+ " EURO"); }));
     }
 }
 
